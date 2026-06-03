@@ -118,6 +118,21 @@
   }
   .hint.hide { opacity: 0; }
 
+  /* extra eye variants */
+  .eye-star, .eye-x { opacity: 0; transition: opacity 0.16s ease; }
+  .content.star  .eye-iris, .content.star  .eye-glint { opacity: 0; }
+  .content.star  .eye-star { opacity: 1; }
+  .content.xeyes .eye-iris, .content.xeyes .eye-glint { opacity: 0; }
+  .content.xeyes .eye-x { opacity: 1; }
+  .eye-iris { transform-box: fill-box; transform-origin: center; }
+  .content.flateye .eye-iris { transform: scaleY(0.5); }
+
+  /* tears, sweat, floating symbols, zzz */
+  .tear  { opacity: 0; transition: transform 0.42s cubic-bezier(.55,0,.75,1), opacity 0.28s ease; transform-box: fill-box; transform-origin: center; }
+  .sweat { opacity: 0; transition: transform 0.4s cubic-bezier(.55,0,.75,1), opacity 0.3s ease; transform-box: fill-box; transform-origin: center; }
+  .floatsym { opacity: 0; transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), opacity 0.3s ease; transform-box: fill-box; transform-origin: center; font-weight: 800; font-family: inherit; }
+  .zzz { opacity: 0; transition: opacity 0.45s ease; font-weight: 700; }
+
   .sparkle { position: fixed; right: 22px; bottom: 18px; width: 26px; height: 26px; opacity: 0.55; pointer-events: none; }
 
   @media (prefers-reduced-motion: reduce) {
@@ -145,6 +160,8 @@
             <circle  class="eye-glint" cx="70" cy="96" r="2.4" fill="#fff" />
             <path class="eye-arc" d="M50 96 Q66 74 82 96" stroke="var(--ink)" stroke-width="7" stroke-linecap="round" fill="none" />
             <path class="eye-heart" d="M66 110 C46 92 50 74 66 82 C82 74 86 92 66 110 Z" fill="var(--ink)" />
+            <path class="eye-star" d="M66 74 L70.4 85.9 L83.1 86.4 L73.1 94.3 L76.6 106.6 L66 99.5 L55.4 106.6 L58.9 94.3 L48.9 86.4 L61.6 85.9 Z" fill="var(--ink)" />
+            <path class="eye-x" d="M54 80 L78 104 M54 104 L78 80" stroke="var(--ink)" stroke-width="6" stroke-linecap="round" fill="none" />
           </g>
         </g>
 
@@ -156,6 +173,8 @@
             <circle  class="eye-glint" cx="138" cy="96" r="2.4" fill="#fff" />
             <path class="eye-arc" d="M118 96 Q134 74 150 96" stroke="var(--ink)" stroke-width="7" stroke-linecap="round" fill="none" />
             <path class="eye-heart" d="M134 110 C114 92 118 74 134 82 C150 74 154 92 134 110 Z" fill="var(--ink)" />
+            <path class="eye-star" d="M134 74 L138.4 85.9 L151.1 86.4 L141.1 94.3 L144.6 106.6 L134 99.5 L123.4 106.6 L126.9 94.3 L116.9 86.4 L129.6 85.9 Z" fill="var(--ink)" />
+            <path class="eye-x" d="M122 80 L146 104 M122 104 L146 80" stroke="var(--ink)" stroke-width="6" stroke-linecap="round" fill="none" />
           </g>
         </g>
 
@@ -166,13 +185,24 @@
 
         <!-- TONGUE -->
         <path class="tongue" id="tongue" d="M93 149 Q100 149 107 149 Q107 163 100 163 Q93 163 93 149 Z" fill="#ff7a93" />
+
+        <!-- tears -->
+        <path class="tear" id="tearL" d="M60 113 Q55 121 60 126 Q65 121 60 113 Z" fill="#8fd1ff" />
+        <path class="tear" id="tearR" d="M128 113 Q123 121 128 126 Q133 121 128 113 Z" fill="#8fd1ff" />
+
+        <!-- sweat drop -->
+        <path class="sweat" id="sweat" d="M151 66 Q145 76 151 82 Q157 76 151 66 Z" fill="#8fd1ff" />
+
+        <!-- floating symbol + zzz -->
+        <text class="floatsym" id="floatsym" x="100" y="44" text-anchor="middle" font-size="28" fill="var(--ink)"></text>
+        <text class="zzz" id="zzz" x="150" y="58" text-anchor="middle" font-size="20" fill="var(--ink)">z  z  z</text>
       </svg>
     </div>
   </div>
 
   <div class="bubble" id="bubble"></div>
-  <input class="typer" id="typer" type="text" autocomplete="off" spellcheck="false" placeholder="say something to me…" />
-  <div class="hint" id="hint">move your mouse · click me · type to me</div>
+  <input class="typer" id="typer" type="text" autocomplete="off" spellcheck="false" placeholder="chat with me…" />
+  <div class="hint" id="hint">move your mouse · click me · chat with me</div>
 
   <svg class="sparkle" viewBox="0 0 24 24" fill="none">
     <path d="M12 2 L13.6 9.4 L21 11 L13.6 12.6 L12 20 L10.4 12.6 L3 11 L10.4 9.4 Z" fill="#fff"/>
@@ -186,6 +216,7 @@
   const contentL = $('contentL'), contentR = $('contentR');
   const browL = $('browL'), browR = $('browR');
   const mouthG = $('mouthG'), mouth = $('mouth'), tongue = $('tongue');
+  const tearL = $('tearL'), tearR = $('tearR'), sweat = $('sweat'), floatsym = $('floatsym'), zzz = $('zzz');
   const bubble = $('bubble'), typer = $('typer'), hint = $('hint'), stage = $('stage');
 
   // eye centres in SVG units (for transform-origin)
@@ -195,11 +226,19 @@
   const MOUTHS = {
     smile:  { d: 'M88 148 Q100 158 112 148', fill: 'none' },
     grin:   { d: 'M86 146 Q100 165 114 146 Z', fill: 'var(--ink)' },
+    bigGrin:{ d: 'M82 144 Q100 172 118 144 Z', fill: 'var(--ink)' },
     o:      { d: 'M92 148 Q92 139 100 139 Q108 139 108 148 Q108 158 100 158 Q92 158 92 148 Z', fill: 'var(--ink)' },
+    bigO:   { d: 'M88 148 Q88 136 100 136 Q112 136 112 148 Q112 162 100 162 Q88 162 88 148 Z', fill: 'var(--ink)' },
     cat:    { d: 'M88 147 Q94 153 100 147 Q106 153 112 147', fill: 'none' },
     frown:  { d: 'M88 156 Q100 147 112 156', fill: 'none' },
     flat:   { d: 'M89 151 L111 151', fill: 'none' },
     smallo: { d: 'M95 149 Q95 143 100 143 Q105 143 105 149 Q105 155 100 155 Q95 155 100 155 Z', fill: 'var(--ink)' },
+    wavy:   { d: 'M88 151 Q92 147 96 151 Q100 155 104 151 Q108 147 112 151', fill: 'none' },
+    zig:    { d: 'M88 150 L94 145 L100 150 L106 145 L112 150', fill: 'none' },
+    smirk:  { d: 'M88 152 Q100 152 112 144', fill: 'none' },
+    pout:   { d: 'M96 147 Q96 143 100 143 Q104 143 104 147 Q104 151 100 152 Q96 151 96 147 Z', fill: 'var(--ink)' },
+    tiny:   { d: 'M96 150 Q100 153 104 150', fill: 'none' },
+    gasp:   { d: 'M93 147 Q93 140 100 140 Q107 140 107 147 Q107 156 100 158 Q93 156 93 147 Z', fill: 'var(--ink)' },
   };
 
   const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -381,6 +420,119 @@
     busy = false;
   }
 
+  /* ---------- extra primitives for the big expression set ---------- */
+  const BROW = {
+    rest:  ['M50 56 Q66 52 82 58', 'M118 58 Q134 52 150 56'],
+    angry: ['M50 56 Q66 58 84 67',  'M116 67 Q134 58 150 56'],
+    worry: ['M50 62 Q66 54 82 64',  'M118 64 Q134 54 150 62'],
+    flat:  ['M50 58 L82 58',        'M118 58 L150 58'],
+  };
+  function setBrows(kind, tL, tR) {
+    const b = BROW[kind] || BROW.rest;
+    browL.setAttribute('d', b[0]); browR.setAttribute('d', b[1]);
+    browL.style.transform = tL || ''; browR.style.transform = tR || '';
+    showBrows(kind !== 'rest');
+  }
+  function resetFace() {
+    setBrows('rest'); setMouth('smile');
+    eyesClass('happy', false); eyesClass('heart', false);
+    eyesClass('star', false); eyesClass('xeyes', false); eyesClass('flateye', false);
+    lid(lidL, 1, 1); lid(lidR, 1, 1);
+    blush(false); showSweat(false); showZzz(false); hideSym();
+    tongue.style.opacity = 0;
+    face.style.transform = '';
+  }
+  function eyesVariant(name) {
+    ['happy','heart','star','xeyes','flateye'].forEach(v => eyesClass(v, v === name));
+  }
+  function showSweat(on) { sweat.style.opacity = on ? 1 : 0; sweat.style.transform = on ? 'translateY(7px)' : 'translateY(0)'; }
+  function showZzz(on) { zzz.style.opacity = on ? 1 : 0; }
+  function sym(ch) {
+    floatsym.textContent = ch;
+    floatsym.style.opacity = 1;
+    floatsym.style.transform = 'translateY(-9px) scale(1.15)';
+    setTimeout(() => { floatsym.style.transform = 'translateY(0) scale(1)'; }, 130);
+  }
+  function hideSym() { floatsym.style.opacity = 0; }
+  // move the pupils directly (used during expressions, when the gaze loop is paused)
+  function lookAt(x, y) { contentL.style.transform = `translate(${x}px, ${y}px)`; contentR.style.transform = `translate(${x}px, ${y}px)`; }
+
+  async function shakeH(times = 3, a = 8) {
+    for (let i = 0; i < times; i++) { face.style.transform = `rotate(${a}deg)`; await wait(80); face.style.transform = `rotate(${-a}deg)`; await wait(80); }
+    face.style.transform = '';
+  }
+  async function bobV(times = 3, d = 6) {
+    for (let i = 0; i < times; i++) { face.style.transform = `translateY(${-d}px)`; await wait(110); face.style.transform = `translateY(${d * 0.4}px)`; await wait(110); }
+    face.style.transform = '';
+  }
+  async function shiver(times = 8, a = 2) {
+    for (let i = 0; i < times; i++) { face.style.transform = `translateX(${a}px)`; await wait(45); face.style.transform = `translateX(${-a}px)`; await wait(45); }
+    face.style.transform = '';
+  }
+  async function cryStream(rounds = 4) {
+    for (let i = 0; i < rounds; i++) {
+      tearL.style.opacity = 1; tearR.style.opacity = 1;
+      tearL.style.transform = 'translateY(0)'; tearR.style.transform = 'translateY(0)';
+      await wait(20);
+      tearL.style.transform = 'translateY(36px)'; tearR.style.transform = 'translateY(36px)';
+      await wait(360);
+      tearL.style.opacity = 0; tearR.style.opacity = 0;
+      tearL.style.transform = 'translateY(0)'; tearR.style.transform = 'translateY(0)';
+      await wait(70);
+    }
+  }
+
+  // run an expression body with the busy-lock + guaranteed reset
+  async function play(fn) {
+    if (busy) return;
+    busy = true;
+    try { await fn(); } finally { resetFace(); busy = false; }
+  }
+
+  /* ---------- the big expression library ---------- */
+  const happy      = () => play(async () => { setMouth('grin'); await bobV(1, 5); await wait(120); });
+  const grinBig    = () => play(async () => { setMouth('bigGrin'); eyesVariant('happy'); await bobV(2, 6); });
+  const giggle     = () => play(async () => { eyesVariant('happy'); setMouth('cat'); for (let i=0;i<3;i++){ face.style.transform='translateY(-3px) rotate(2deg)'; await wait(110); face.style.transform='translateY(0) rotate(-2deg)'; await wait(110);} });
+  const kiss       = () => play(async () => { blush(true); lid(lidR,1.05,0.05); setMouth('pout'); sym('♥'); await wait(700); });
+  const starstruck = () => play(async () => { blush(true); eyesVariant('star'); setMouth('grin'); sym('✨'); for(let i=0;i<2;i++){ lid(lidL,1.12,1.12);lid(lidR,1.12,1.12); await wait(170); lid(lidL,1,1);lid(lidR,1,1); await wait(200);} await wait(250); });
+  const celebrate  = () => play(async () => { eyesVariant('star'); setMouth('bigGrin'); for(let i=0;i<3;i++){ sym(['✨','🎉','★'][i%3]); face.style.transform='translateY(-8px)'; await wait(140); face.style.transform='translateY(0)'; await wait(140);} });
+  const excited    = starstruck;
+
+  const shocked    = () => play(async () => { setBrows('rest','translateY(-6px)','translateY(-6px)'); lid(lidL,1.2,1.2); lid(lidR,1.2,1.2); setMouth('bigO'); sym('!'); face.style.transform='translateY(4px) scale(0.96)'; await wait(800); });
+  const mindblown  = () => play(async () => { lid(lidL,1.25,1.25); lid(lidR,1.25,1.25); setMouth('bigO'); sym('💥'); await wait(450); eyesVariant('star'); await wait(700); });
+  const cry        = () => play(async () => { setBrows('worry','translateY(2px) rotate(8deg)','translateY(2px) rotate(-8deg)'); lid(lidL,1,0.7); lid(lidR,1,0.7); setMouth('frown'); await Promise.all([cryStream(4), shiver(6,1.5)]); });
+  const angry      = () => play(async () => { blush(true); setBrows('angry'); setMouth('zig'); sym('💢'); await shakeH(4,5); await wait(200); });
+  const annoyed    = () => play(async () => { setBrows('flat'); eyesVariant('flateye'); setMouth('flat'); lookAt(6, 0); await wait(900); });
+  const confused   = () => play(async () => { setBrows('rest','translateY(-6px)',''); setMouth('tiny'); sym('?'); face.style.transform='rotate(7deg)'; lookAt(4, -2); await wait(950); });
+  const think      = () => play(async () => { setBrows('rest','translateY(-3px)',''); setMouth('flat'); lookAt(-5, -7); sym('…'); await wait(1100); });
+  const nervous    = () => play(async () => { setBrows('worry'); setMouth('wavy'); showSweat(true); await shiver(8,1.6); await wait(200); });
+  const scared     = () => play(async () => { setBrows('worry','translateY(-4px)','translateY(-4px)'); lid(lidL,1.15,1.15); lid(lidR,1.15,1.15); setMouth('gasp'); sym('!'); face.style.transform='scale(0.93)'; await shiver(10,2); });
+  const shy        = () => play(async () => { blush(true); setMouth('tiny'); lid(lidL,1,0.78); lid(lidR,1,0.78); lookAt(8, 2); await wait(950); });
+  const smug       = () => play(async () => { setBrows('rest','','translateY(-6px)'); setMouth('smirk'); lid(lidL,1,0.75); lid(lidR,1,0.75); lookAt(6, -2); await wait(950); });
+  const mischief   = () => play(async () => { setBrows('angry'); setMouth('smirk'); lid(lidL,1,0.7); lid(lidR,1,0.7); lookAt(5, -2); sym('😏'); await wait(950); });
+  const cool       = () => play(async () => { setBrows('flat'); setMouth('smirk'); lid(lidL,1,0.7); lid(lidR,1,0.7); sym('😎'); await bobV(1,4); await wait(600); });
+  const proud      = () => play(async () => { setMouth('grin'); lookAt(0, -4); face.style.transform='translateY(-6px)'; await wait(900); });
+
+  const dead       = () => play(async () => { eyesVariant('xeyes'); setMouth('flat'); face.style.transform='rotate(10deg) translateY(4px)'; await wait(1100); });
+  const sleepy     = () => play(async () => { setMouth('tiny'); lid(lidL,1,0.45); lid(lidR,1,0.45); showZzz(true); await wait(1300); });
+  const sleep      = () => play(async () => { eyesVariant('happy'); setMouth('tiny'); showZzz(true); for(let i=0;i<2;i++){ face.style.transform='translateY(-2px) rotate(2deg)'; await wait(450); face.style.transform='translateY(0) rotate(0)'; await wait(450);} });
+  const yawn       = () => play(async () => { lid(lidL,1,0.4); lid(lidR,1,0.4); setMouth('bigO'); showZzz(true); await wait(700); setMouth('o'); await wait(300); });
+  const bored      = () => play(async () => { setBrows('flat'); eyesVariant('flateye'); setMouth('flat'); lookAt(-7, 2); await wait(700); setMouth('tiny'); await wait(500); });
+
+  const nod        = () => play(async () => { setMouth('smile'); for(let i=0;i<2;i++){ face.style.transform='translateY(6px)'; await wait(150); face.style.transform='translateY(-4px)'; await wait(150);} });
+  const shakeNo    = () => play(async () => { setMouth('frown'); await shakeH(3,9); });
+  const eyeroll    = () => play(async () => { setMouth('flat'); const pts=[[0,-7],[7,-5],[7,3],[-7,3],[-7,-5],[0,-7]]; for(const [x,y] of pts){ lookAt(x,y); await wait(110);} lookAt(0,0); await wait(200); });
+  const wave       = () => play(async () => { setMouth('grin'); lid(lidR,1.05,0.05); sym('👋'); await bobV(1,5); await wait(450); });
+
+  /* ---------- expression registry (name -> player) ---------- */
+  const EXP = {
+    smile: happy, happy, grin: grinBig, giggle, laugh, wink, love, kiss,
+    tongue: tongueOut, surprised, shocked, mindblown, star: starstruck, excited, celebrate,
+    sad, cry, angry, annoyed, confused, think, nervous, scared, shy, smug, mischief, cool, proud,
+    dizzy, dead, sleepy, sleep, yawn, bored, nod, shake: shakeNo, eyeroll, wave, blink: () => blink(true),
+  };
+  function playExp(name) { const f = EXP[(name || '').toLowerCase().trim()]; if (f) { f(); return true; } return false; }
+
   /* ---------- speech bubble ---------- */
   let bubbleTimer;
   function say(text, ms = 1900) {
@@ -408,61 +560,152 @@
   }
   scheduleSaccade();
 
+  const IDLE_ACTS = ['wink','tongue','giggle','dizzy','yawn','sleepy','think','bored','smug','eyeroll','star'];
   function scheduleSilly() {
     setTimeout(() => {
-      if (!busy && document.activeElement !== typer) {
-        const acts = [wink, tongueOut, dizzy, () => { say('hi! :)'); blink(); }];
-        acts[Math.floor(Math.random() * acts.length)]();
-      }
+      if (!busy && document.activeElement !== typer) playExp(pick(IDLE_ACTS));
       scheduleSilly();
     }, 8000 + Math.random() * 9000);
   }
   scheduleSilly();
 
-  /* ---------- click cycles expressions ---------- */
-  const clickActs = [wink, tongueOut, surprised, laugh, love, dizzy];
-  let clickIdx = 0;
+  /* ---------- click plays a random expression ---------- */
+  const CLICK_ACTS = ['wink','tongue','surprised','laugh','love','dizzy','shocked','mindblown','star',
+    'celebrate','angry','cry','confused','nervous','scared','shy','mischief','cool','dead','kiss','wave','grin'];
   stage.addEventListener('click', e => {
     if (e.target === typer || busy) return;
-    clickActs[clickIdx++ % clickActs.length]();
+    playExp(pick(CLICK_ACTS));
   });
 
-  /* ---------- typing reactions ---------- */
-  const pick = a => a[Math.floor(Math.random() * a.length)];
-  const RULES = [
-    { kw: ['love','heart','<3','❤','adore','cute','marry','💕'], fn: love,      say: ['aww ♥','me too ♥','*blush*'] },
-    { kw: ['lol','haha','lmao','funny','joke','rofl','😂','hehe'], fn: laugh,    say: ['hahaha!','heehee','good one!'] },
-    { kw: ['hi','hello','hey','yo','sup','howdy','hiya'],        fn: wink,      say: ['hello!','hey you :)','hiii'] },
-    { kw: ['sad','cry','sorry','bad','hurt','😢','upset','lonely'],fn: sad,      say: ['aw, there there','hug?','it’ll be ok'] },
-    { kw: ['wow','omg','what','really','whoa','no way','?!'],    fn: surprised, say: ['whoa!','really?!','no way!'] },
-    { kw: ['tongue','silly','bleh','nyah','blep','weird','pfft'],fn: tongueOut, say: ['blehh!',':P','nyaa'] },
-    { kw: ['dizzy','spin','confused','huh','what?','??'],        fn: dizzy,     say: ['woop woop','wheee','@_@'] },
-    { kw: ['bye','goodbye','cya','later','gtg','night'],         fn: wink,      say: ['byeee','see ya!','come back soon'] },
-    { kw: ['name','who are you','what are you'],                 fn: wink,      say: ["i'm Smiley!",'just a happy face :)'] },
-    { kw: ['good','great','nice','cool','awesome','yay','happy'],fn: laugh,     say: ['yay!',':D','woohoo'] },
+  /* ---------- local keyword brain (instant, used as fallback if AI is down) ---------- */
+  const KW = [
+    { k:['love','heart','<3','❤','adore','cute','marry','💕','crush'],      e:'love',       s:['aww ♥','me too ♥','*blush*'] },
+    { k:['kiss','mwah','smooch'],                                          e:'kiss',       s:['mwah!','♥'] },
+    { k:['lol','haha','lmao','funny','joke','rofl','😂','hehe','lmfao'],    e:'laugh',      s:['hahaha!','heehee','good one!'] },
+    { k:['hi','hello','hey','yo','sup','howdy','hiya'],                    e:'wave',       s:['hello!','hey you!','hiii'] },
+    { k:['bye','goodbye','cya','later','gtg','night'],                     e:'wave',       s:['byeee','see ya!','come back soon'] },
+    { k:['sad','cry','depress','sorry','hurt','😢','lonely','miss'],        e:'cry',        s:['aw, there there','hug?','it’ll be ok'] },
+    { k:['angry','mad','hate','furious','annoy','ugh','grr'],              e:'angry',      s:['grr!','hmph!','>:('] },
+    { k:['wow','omg','whoa','no way','insane'],                           e:'shocked',    s:['whoa!','no way!','!!'] },
+    { k:['mind blown','amazing','incredible','genius'],                   e:'mindblown',  s:['mind = blown','whoaaa'] },
+    { k:['epic','best','favorite','awesome','cool','star'],               e:'star',       s:['so cool!','✨','yesss'] },
+    { k:['yay','win','won','party','celebrate','congrats'],               e:'celebrate',  s:['woohoo!','yaaay','🎉'] },
+    { k:['tongue','silly','bleh','nyah','blep','pfft'],                    e:'tongue',     s:['blehh!',':P','nyaa'] },
+    { k:['confused','huh','idk','unsure','what?'],                        e:'confused',   s:['huh?','wait what','???'] },
+    { k:['think','hmm','wonder','maybe'],                                 e:'think',      s:['hmm…','lemme think','🤔'] },
+    { k:['scare','scary','boo','spooky','afraid'],                        e:'scared',     s:['eep!','aaah!','😱'] },
+    { k:['nervous','worried','anxious','uh oh'],                          e:'nervous',    s:['uh oh…','*sweats*','eheh'] },
+    { k:['shy','blush','embarrass'],                                      e:'shy',        s:['>///<','teehee','*hides*'] },
+    { k:['dizzy','spin','woozy'],                                         e:'dizzy',      s:['woop woop','@_@','wheee'] },
+    { k:['sleep','tired','sleepy','yawn','bed','zzz'],                    e:'sleepy',     s:['*yawn*','so sleepy…','zzz'] },
+    { k:['bored','boring','meh'],                                         e:'bored',      s:['*sigh*','meh','soooo bored'] },
+    { k:['smug','clever','told you','obviously'],                         e:'smug',       s:['heh.','obviously','told ya'] },
+    { k:['whatever','sure jan','eye roll'],                               e:'eyeroll',    s:['*eyeroll*','riiight','uh-huh'] },
+    { k:['yes','yeah','yep','agree','okay'],                              e:'nod',        s:['yep!','mhm!','for sure'] },
+    { k:['nope','nah','disagree'],                                       e:'shake',      s:['nope','nuh-uh','no way'] },
+    { k:['dead','rip','dying','lmaooo'],                                  e:'dead',       s:['x_x','i’m dead','💀'] },
+    { k:['name','who are you','what are you'],                            e:'wink',       s:["i'm Smiley!",'just a happy face!'] },
   ];
-
-  function react(text) {
-    const t = text.toLowerCase().trim();
-    if (!t) return;
-    for (const r of RULES) {
-      if (r.kw.some(k => t.includes(k))) { say(pick(r.say)); r.fn(); return; }
-    }
-    pick([
-      () => { say('ooh, tell me more'); wink(); },
-      () => { say('mhm mhm'); blink(true); },
-      () => { say('hehe'); tongueOut(); },
-      () => { say(':)'); wink(); },
-    ])();
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  function localReact(text) {
+    const t = (text || '').toLowerCase();
+    for (const r of KW) if (r.k.some(k => t.includes(k))) { say(pick(r.s)); playExp(r.e); return; }
+    const fb = [['wink','ooh, tell me more'], ['nod','mhm mhm'], ['giggle','hehe'], ['happy',':)'], ['think','interesting…']];
+    const f = pick(fb); say(f[1]); playExp(f[0]);
   }
 
+  /* ---------- AI brain: streaming + keyless, with the AI choosing the expression ---------- */
+  const AI_URL = 'https://text.pollinations.ai/openai';
+  const FACE_TAGS = 'smile,grin,wink,laugh,giggle,love,kiss,tongue,surprised,shocked,mindblown,star,celebrate,' +
+    'sad,cry,angry,annoyed,confused,think,nervous,scared,shy,smug,mischief,cool,proud,dizzy,dead,sleepy,yawn,bored,nod,shake,eyeroll,wave';
+  const SYS =
+    'You are Smiley, a tiny cute animated face on a web page. You are playful, warm, witty and a little cheeky. ' +
+    'You express yourself ONLY through one facial expression plus a very short line of text.\n' +
+    'Rules:\n' +
+    '- Begin EVERY reply with exactly one expression tag in square brackets, chosen from: [' + FACE_TAGS + '].\n' +
+    '- After the tag, write your spoken line: at most ~15 words, casual and fun, no markdown, no emoji, no quotes.\n' +
+    '- Pick the tag that best matches your reaction/mood.\n' +
+    'Examples:\n[laugh] hahaha okay that one actually got me\n[love] aw you are the sweetest\n[think] hmm let me noodle on that';
+
+  const history = [];
+  let aiCtrl = null, aiFails = 0, aiDead = false;
+
+  const parseTagged = s => {
+    const m = s.match(/^\s*\[([a-zA-Z]+)\]\s*/);
+    return m ? { tag: m[1].toLowerCase(), spoken: s.slice(m[0].length) } : { tag: null, spoken: s };
+  };
+
+  async function aiReact(text) {
+    if (aiDead) return localReact(text);
+    if (aiCtrl) aiCtrl.abort();
+    const ctrl = new AbortController(); aiCtrl = ctrl;
+    history.push({ role: 'user', content: text });
+    while (history.length > 8) history.shift();
+    bubble.textContent = '·  ·  ·'; bubble.classList.add('show');
+
+    let full = '', played = false, gotAny = false, timedOut = false;
+    const watchdog = setTimeout(() => { if (!gotAny) { timedOut = true; try { ctrl.abort(); } catch {} } }, 8000);
+    try {
+      const res = await fetch(AI_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'openai-fast',
+          messages: [{ role: 'system', content: SYS }, ...history],
+          stream: true, private: true, referrer: 'smiley-face',
+        }),
+        signal: ctrl.signal,
+      });
+      if (!res.ok || !res.body) throw new Error('bad response');
+      const reader = res.body.getReader(), dec = new TextDecoder();
+      let buf = '';
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const lines = buf.split('\n'); buf = lines.pop();
+        for (const line of lines) {
+          const l = line.trim();
+          if (!l.startsWith('data:')) continue;
+          const data = l.slice(5).trim();
+          if (!data || data === '[DONE]') continue;
+          let delta = '';
+          try { delta = JSON.parse(data).choices?.[0]?.delta?.content || ''; } catch {}
+          if (!delta) continue;
+          full += delta; gotAny = true;
+          const { tag, spoken } = parseTagged(full);
+          if (!played) {
+            if (tag) { played = true; playExp(tag); }
+            else if (/^\s*[^[\s]/.test(full)) { played = true; playExp('happy'); }
+          }
+          if (spoken.trim()) say(spoken.trim(), 9000);
+        }
+      }
+      const fin = parseTagged(full);
+      if (!gotAny || !fin.spoken.trim()) throw new Error('empty');
+      if (!played) playExp(fin.tag || 'happy');
+      const txt = fin.spoken.trim();
+      say(txt, Math.max(2600, Math.min(9000, txt.length * 75)));
+      history.push({ role: 'assistant', content: full });
+      aiFails = 0;
+    } catch (err) {
+      if (err && err.name === 'AbortError' && !timedOut) return; // superseded by a newer message
+      if (++aiFails >= 3) aiDead = true;                          // stop hammering a dead service
+      history.pop();                                              // don't keep the unanswered turn
+      localReact(text);
+    } finally {
+      clearTimeout(watchdog);
+      if (aiCtrl === ctrl) aiCtrl = null;
+    }
+  }
+
+  /* ---------- input handlers ---------- */
   typer.addEventListener('input', () => {
     const last = typer.value.slice(-1);
-    if (last === '?' && !busy) surprised();
-    else if (/[a-z0-9]/i.test(last) && !busy && Math.random() < 0.18) blink();
+    if (/[a-z0-9]/i.test(last) && !busy && Math.random() < 0.12) blink();
   });
   typer.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { react(typer.value); typer.value = ''; }
+    if (e.key === 'Enter') { const v = typer.value.trim(); typer.value = ''; if (v) aiReact(v); }
   });
   typer.addEventListener('focus', () => hint.classList.add('hide'));
 
@@ -472,7 +715,7 @@
   window.addEventListener('keydown', dropHint, { once: true });
 
   // hello on load
-  setTimeout(() => { say('hi there! :)'); wink(); }, 700);
+  setTimeout(() => { say('hi! talk to me :)'); wave(); }, 700);
 })();
 </script>
 </body>
