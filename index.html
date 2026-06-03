@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Smiley</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  body {
+    /* soft watercolor pastel wash */
+    background:
+      radial-gradient(120% 90% at 12% 18%,  rgba(255,179,186,0.85) 0%, rgba(255,179,186,0) 55%),
+      radial-gradient(110% 90% at 88% 20%,  rgba(214,201,255,0.85) 0%, rgba(214,201,255,0) 55%),
+      radial-gradient(120% 95% at 85% 90%,  rgba(255,210,168,0.80) 0%, rgba(255,210,168,0) 55%),
+      radial-gradient(120% 95% at 15% 88%,  rgba(255,243,191,0.85) 0%, rgba(255,243,191,0) 55%),
+      radial-gradient(150% 120% at 50% 50%, rgba(255,224,229,0.70) 0%, rgba(255,255,255,0) 70%),
+      linear-gradient(135deg, #ffe9ec 0%, #fef6df 35%, #f3eaff 70%, #ffe4ec 100%);
+    background-size: 200% 200%;
+    animation: drift 26s ease-in-out infinite;
+  }
+
+  @keyframes drift {
+    0%, 100% { background-position: 0% 50%; }
+    50%      { background-position: 100% 50%; }
+  }
+
+  .stage {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .face {
+    width: min(46vmin, 360px);
+    height: min(46vmin, 360px);
+    overflow: visible;
+    transition: transform 0.25s cubic-bezier(.34,1.56,.64,1);
+    transform-origin: center;
+  }
+
+  /* gentle idle bob */
+  .face-wrap {
+    animation: bob 5.5s ease-in-out infinite;
+  }
+  @keyframes bob {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50%      { transform: translateY(-2.2%) rotate(-0.6deg); }
+  }
+
+  .eye, .pupil, .mouth-path, .tongue, .brow, .cheek {
+    transition: all 0.18s ease-out;
+  }
+
+  .pupil { transition: transform 0.08s linear; }
+
+  .cheek { opacity: 0; transition: opacity 0.4s ease; }
+  .face.blush .cheek { opacity: 1; }
+
+  /* hint text */
+  .hint {
+    position: fixed;
+    bottom: 26px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(60,40,50,0.45);
+    font-size: 14px;
+    letter-spacing: 0.3px;
+    user-select: none;
+    pointer-events: none;
+    text-align: center;
+    transition: opacity 0.6s ease;
+  }
+  .hint.hide { opacity: 0; }
+
+  /* speech bubble */
+  .bubble {
+    position: fixed;
+    top: 14%;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px) scale(0.9);
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border-radius: 22px;
+    padding: 12px 22px;
+    color: #5a4150;
+    font-size: clamp(16px, 2.4vw, 24px);
+    font-weight: 500;
+    box-shadow: 0 8px 30px rgba(180,140,160,0.25);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(.34,1.56,.64,1);
+    max-width: 80vw;
+    text-align: center;
+  }
+  .bubble.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+
+  /* hidden input that captures typing */
+  .typer {
+    position: fixed;
+    bottom: 64px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(420px, 80vw);
+    padding: 13px 20px;
+    border: none;
+    border-radius: 30px;
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 6px 24px rgba(180,140,160,0.22);
+    font-size: 16px;
+    color: #4a3340;
+    text-align: center;
+    outline: none;
+    transition: box-shadow 0.25s ease, background 0.25s ease;
+  }
+  .typer::placeholder { color: rgba(90,65,80,0.4); }
+  .typer:focus {
+    background: rgba(255,255,255,0.78);
+    box-shadow: 0 6px 30px rgba(180,140,160,0.4);
+  }
+
+  .sparkle {
+    position: fixed;
+    right: 22px;
+    bottom: 18px;
+    width: 26px;
+    height: 26px;
+    opacity: 0.55;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+  <div class="stage" id="stage">
+    <div class="face-wrap">
+      <svg class="face" id="face" viewBox="0 0 200 200" aria-label="A smiling face">
+        <!-- cheeks (blush) -->
+        <ellipse class="cheek" cx="62"  cy="118" rx="16" ry="11" fill="#ff9db0" />
+        <ellipse class="cheek" cx="138" cy="118" rx="16" ry="11" fill="#ff9db0" />
+
+        <!-- eyebrows (hidden by default, used for expressions) -->
+        <path class="brow" id="browL" d="M58 70 Q72 66 84 70" stroke="var(--ink)" stroke-width="0" stroke-linecap="round" fill="none" />
+        <path class="brow" id="browR" d="M116 70 Q128 66 142 70" stroke="var(--ink)" stroke-width="0" stroke-linecap="round" fill="none" />
+
+        <!-- eyes -->
+        <g id="eyeL">
+          <circle class="eye" id="eyeWhiteL" cx="72" cy="84" r="15" fill="var(--ink)" />
+          <circle class="pupil" id="pupilL" cx="72" cy="84" r="6" fill="#fff" opacity="0" />
+        </g>
+        <g id="eyeR">
+          <circle class="eye" id="eyeWhiteR" cx="128" cy="84" r="15" fill="var(--ink)" />
+          <circle class="pupil" id="pupilR" cx="128" cy="84" r="6" fill="#fff" opacity="0" />
+        </g>
+
+        <!-- mouth -->
+        <path class="mouth-path" id="mouth" d="M64 124 Q100 156 136 124"
+              stroke="var(--ink)" stroke-width="7" stroke-linecap="round" fill="none" />
+
+        <!-- tongue -->
+        <path class="tongue" id="tongue" d="M86 138 Q100 138 114 138 Q114 162 100 162 Q86 162 86 138 Z"
+              fill="#ff7a93" opacity="0" />
+      </svg>
+    </div>
+  </div>
+
+  <div class="bubble" id="bubble"></div>
+  <input class="typer" id="typer" type="text" autocomplete="off" spellcheck="false"
+         placeholder="say something to me…" />
+  <div class="hint" id="hint">move your mouse · click me · type to me</div>
+
+  <svg class="sparkle" viewBox="0 0 24 24" fill="none">
+    <path d="M12 2 L13.6 9.4 L21 11 L13.6 12.6 L12 20 L10.4 12.6 L3 11 L10.4 9.4 Z" fill="#fff"/>
+  </svg>
+
+<script>
+(() => {
+  const face   = document.getElementById('face');
+  const pupilL = document.getElementById('pupilL');
+  const pupilR = document.getElementById('pupilR');
+  const eyeWL  = document.getElementById('eyeWhiteL');
+  const eyeWR  = document.getElementById('eyeWhiteR');
+  const eyeLG  = document.getElementById('eyeL');
+  const eyeRG  = document.getElementById('eyeR');
+  const browL  = document.getElementById('browL');
+  const browR  = document.getElementById('browR');
+  const mouth  = document.getElementById('mouth');
+  const tongue = document.getElementById('tongue');
+  const bubble = document.getElementById('bubble');
+  const typer  = document.getElementById('typer');
+  const hint   = document.getElementById('hint');
+  const stage  = document.getElementById('stage');
+
+  // eye geometry (matches SVG)
+  const EYES = [
+    { white: eyeWL, pupil: pupilL, cx: 72,  cy: 84 },
+    { white: eyeWR, pupil: pupilR, cx: 128, cy: 84 },
+  ];
+
+  const MOUTHS = {
+    smile:   'M64 124 Q100 156 136 124',
+    grin:    'M60 120 Q100 168 140 120',
+    o:       'M86 130 Q100 116 114 130 Q114 152 100 152 Q86 152 86 130',
+    flat:    'M70 138 Q100 138 130 138',
+    frown:   'M64 150 Q100 124 136 150',
+    wobble:  'M66 132 Q83 120 100 132 Q117 144 134 132',
+    cat:     'M70 130 Q85 146 100 130 Q115 146 130 130',
+  };
+
+  let busy = false;          // an expression animation is playing
+  let mouseX = 0.5, mouseY = 0.5;
+  let hasMoved = false;
+
+  /* ---------- eye tracking ---------- */
+  function trackEyes() {
+    if (busy) { requestAnimationFrame(trackEyes); return; }
+    const rect = face.getBoundingClientRect();
+    // normalized direction from face center to pointer
+    const fx = rect.left + rect.width / 2;
+    const fy = rect.top + rect.height / 2;
+    const px = mouseX * window.innerWidth;
+    const py = mouseY * window.innerHeight;
+    let dx = (px - fx) / (window.innerWidth / 2);
+    let dy = (py - fy) / (window.innerHeight / 2);
+    dx = Math.max(-1, Math.min(1, dx));
+    dy = Math.max(-1, Math.min(1, dy));
+
+    const max = 5.5; // px of travel inside the eye (SVG units)
+    EYES.forEach(e => {
+      e.pupil.setAttribute('cx', e.cx + dx * max);
+      e.pupil.setAttribute('cy', e.cy + dy * max);
+      e.white.setAttribute('cx', e.cx + dx * 1.5);
+      e.white.setAttribute('cy', e.cy + dy * 1.5);
+    });
+
+    // tiny head tilt toward the cursor
+    face.style.transform = `rotate(${dx * 4}deg) translate(${dx*4}px, ${dy*3}px)`;
+    requestAnimationFrame(trackEyes);
+  }
+
+  window.addEventListener('pointermove', (e) => {
+    mouseX = e.clientX / window.innerWidth;
+    mouseY = e.clientY / window.innerHeight;
+    if (!hasMoved) { hasMoved = true; }
+  });
+  requestAnimationFrame(trackEyes);
+
+  /* ---------- low level helpers ---------- */
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+
+  function setMouth(name) { mouth.setAttribute('d', MOUTHS[name] || MOUTHS.smile); }
+
+  function showPupils(on) {
+    const o = on ? 1 : 0;
+    pupilL.style.opacity = o;
+    pupilR.style.opacity = o;
+  }
+
+  function blush(on) { face.classList.toggle('blush', on); }
+
+  // squash an eye closed by scaling its group vertically
+  function closeEye(group, cy, closed) {
+    if (closed) {
+      group.style.transform = `translateY(${cy}px) scaleY(0.1) translateY(${-cy}px)`;
+      group.style.transformBox = 'fill-box';
+    } else {
+      group.style.transform = '';
+    }
+  }
+  // use transform-origin via CSS for the groups
+  eyeLG.style.transformOrigin = '72px 84px';
+  eyeRG.style.transformOrigin = '128px 84px';
+  function setEye(group, closed) {
+    group.style.transform = closed ? 'scaleY(0.08)' : '';
+  }
+
+  /* ---------- expressions ---------- */
+  async function blink() {
+    if (busy) return;
+    setEye(eyeLG, true); setEye(eyeRG, true);
+    await wait(110);
+    setEye(eyeLG, false); setEye(eyeRG, false);
+  }
+
+  async function wink() {
+    if (busy) return; busy = true;
+    setEye(eyeRG, true);
+    setMouth('grin');
+    await wait(450);
+    setEye(eyeRG, false);
+    setMouth('smile');
+    busy = false;
+  }
+
+  async function tongueOut() {
+    if (busy) return; busy = true;
+    setMouth('o');
+    setEye(eyeLG, true); setEye(eyeRG, true);
+    tongue.style.opacity = 1;
+    tongue.style.transform = 'translateY(0)';
+    await wait(700);
+    tongue.style.transform = 'translateY(8px)';
+    tongue.style.opacity = 0;
+    setEye(eyeLG, false); setEye(eyeRG, false);
+    setMouth('smile');
+    busy = false;
+  }
+
+  async function surprised() {
+    if (busy) return; busy = true;
+    showPupils(true);
+    EYES.forEach(e => e.white.setAttribute('r', 18));
+    setMouth('o');
+    browL.setAttribute('stroke-width', 5);
+    browR.setAttribute('stroke-width', 5);
+    await wait(800);
+    EYES.forEach(e => e.white.setAttribute('r', 15));
+    showPupils(false);
+    browL.setAttribute('stroke-width', 0);
+    browR.setAttribute('stroke-width', 0);
+    setMouth('smile');
+    busy = false;
+  }
+
+  async function dizzy() {
+    if (busy) return; busy = true;
+    setMouth('wobble');
+    for (let i = 0; i < 3; i++) {
+      face.style.transform = 'rotate(8deg)';  await wait(120);
+      face.style.transform = 'rotate(-8deg)'; await wait(120);
+    }
+    face.style.transform = '';
+    setMouth('smile');
+    busy = false;
+  }
+
+  async function love() {
+    if (busy) return; busy = true;
+    blush(true);
+    // heart-ish eyes: just shrink + smile big
+    setMouth('grin');
+    EYES.forEach(e => e.white.setAttribute('r', 11));
+    await wait(900);
+    EYES.forEach(e => e.white.setAttribute('r', 15));
+    setMouth('smile');
+    await wait(400);
+    blush(false);
+    busy = false;
+  }
+
+  async function laugh() {
+    if (busy) return; busy = true;
+    blush(true);
+    for (let i = 0; i < 4; i++) {
+      setEye(eyeLG, true); setEye(eyeRG, true);
+      setMouth('grin');
+      face.style.transform = 'translateY(-4px)';
+      await wait(150);
+      face.style.transform = 'translateY(0)';
+      setMouth('cat');
+      await wait(150);
+    }
+    setEye(eyeLG, false); setEye(eyeRG, false);
+    setMouth('smile');
+    blush(false);
+    busy = false;
+  }
+
+  async function sad() {
+    if (busy) return; busy = true;
+    setMouth('frown');
+    browL.setAttribute('d', 'M58 64 Q72 72 84 76');
+    browR.setAttribute('d', 'M116 76 Q128 72 142 64');
+    browL.setAttribute('stroke-width', 4);
+    browR.setAttribute('stroke-width', 4);
+    await wait(1100);
+    browL.setAttribute('stroke-width', 0);
+    browR.setAttribute('stroke-width', 0);
+    browL.setAttribute('d', 'M58 70 Q72 66 84 70');
+    browR.setAttribute('d', 'M116 70 Q128 66 142 70');
+    setMouth('smile');
+    busy = false;
+  }
+
+  /* ---------- speech bubble ---------- */
+  let bubbleTimer;
+  function say(text, ms = 1900) {
+    bubble.textContent = text;
+    bubble.classList.add('show');
+    clearTimeout(bubbleTimer);
+    bubbleTimer = setTimeout(() => bubble.classList.remove('show'), ms);
+  }
+
+  /* ---------- idle behaviour ---------- */
+  function scheduleBlink() {
+    const t = 1800 + Math.random() * 3500;
+    setTimeout(() => { blink(); scheduleBlink(); }, t);
+  }
+  scheduleBlink();
+
+  // occasional spontaneous silliness
+  function scheduleSilly() {
+    const t = 7000 + Math.random() * 9000;
+    setTimeout(() => {
+      if (!busy && document.activeElement !== typer) {
+        const acts = [wink, tongueOut, dizzy, () => { say('hi! :)'); }];
+        acts[Math.floor(Math.random() * acts.length)]();
+      }
+      scheduleSilly();
+    }, t);
+  }
+  scheduleSilly();
+
+  /* ---------- interactions ---------- */
+  const clickActs = [wink, tongueOut, surprised, dizzy, laugh, love];
+  let clickIdx = 0;
+  stage.addEventListener('click', (e) => {
+    if (e.target === typer) return;
+    if (busy) return;
+    const fn = clickActs[clickIdx % clickActs.length];
+    clickIdx++;
+    fn();
+  });
+
+  hint.addEventListener('animationstart', () => {});
+
+  /* ---------- typing reactions ---------- */
+  // keyword -> reaction
+  const RULES = [
+    { kw: ['love','heart','<3','❤','adore','cute','marry'],          fn: love,      say: ['aww ♥', 'me too ♥', '*blush*'] },
+    { kw: ['lol','haha','lmao','funny','joke','rofl','😂','hehe'],    fn: laugh,     say: ['hahaha!', 'heehee', 'good one!'] },
+    { kw: ['hi','hello','hey','yo','sup','howdy'],                    fn: wink,      say: ['hello!', 'hey you :)', 'hiii'] },
+    { kw: ['sad','cry','sorry','bad','hurt','😢','upset','lonely'],   fn: sad,       say: ['aw, there there', 'hug?', "it'll be ok"] },
+    { kw: ['wow','omg','what','really','whoa','no way','?!'],         fn: surprised, say: ['whoa!', 'really?!', 'no way!'] },
+    { kw: ['tongue','silly','bleh','nyah','blep','weird'],            fn: tongueOut, say: ['blehh!', ':P', 'nyaa'] },
+    { kw: ['dizzy','spin','confused','huh','what?'],                  fn: dizzy,     say: ['woop woop', 'wheee', '@_@'] },
+    { kw: ['bye','goodbye','cya','later','gtg'],                      fn: wink,      say: ['byeee', 'see ya!', 'come back soon'] },
+    { kw: ['name','who are you','what are you'],                      fn: wink,      say: ["i'm Smiley!", 'just a happy face :)'] },
+    { kw: ['good','great','nice','cool','awesome','yay','happy'],     fn: laugh,     say: ['yay!', ':D', 'woohoo'] },
+  ];
+
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  function react(text) {
+    const t = text.toLowerCase().trim();
+    if (!t) return;
+    for (const r of RULES) {
+      if (r.kw.some(k => t.includes(k))) {
+        say(pick(r.say));
+        r.fn();
+        return;
+      }
+    }
+    // default: acknowledge with a little wink/blink + echo vibe
+    const fallbacks = [
+      () => { say('ooh, tell me more'); wink(); },
+      () => { say('mhm mhm'); blink(); },
+      () => { say('hehe'); tongueOut(); },
+      () => { say(':)'); wink(); },
+    ];
+    pick(fallbacks)();
+  }
+
+  // react live as they type the silliest single chars too
+  typer.addEventListener('input', () => {
+    const v = typer.value;
+    const last = v.slice(-1);
+    if (last === '?') { if(!busy) surprised(); }
+    else if (last === '!') { if(!busy) blink(); }
+    else if (/[a-z0-9]/i.test(last) && !busy && Math.random() < 0.25) {
+      // tiny acknowledging blink while typing
+      blink();
+    }
+  });
+
+  typer.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      react(typer.value);
+      typer.value = '';
+    }
+  });
+
+  typer.addEventListener('focus', () => { hint.classList.add('hide'); });
+
+  // hide hint after first interaction
+  let hinted = false;
+  function dropHint(){ if(!hinted){ hinted = true; setTimeout(()=>hint.classList.add('hide'), 2500);} }
+  window.addEventListener('pointermove', dropHint, { once: true });
+  window.addEventListener('keydown', dropHint, { once: true });
+
+  // wave hello on load
+  setTimeout(() => { say('hi there! :)'); wink(); }, 700);
+})();
+</script>
+</body>
+</html>
