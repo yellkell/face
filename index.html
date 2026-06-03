@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Smiley</title>
 <style>
-  :root {
-    --ink: #1a1a1a;
-  }
+  :root { --ink: #141414; }
 
   * { box-sizing: border-box; }
 
@@ -16,10 +14,10 @@
     height: 100%;
     overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 
   body {
-    /* soft watercolor pastel wash */
     background:
       radial-gradient(120% 90% at 12% 18%,  rgba(255,179,186,0.85) 0%, rgba(255,179,186,0) 55%),
       radial-gradient(110% 90% at 88% 20%,  rgba(214,201,255,0.85) 0%, rgba(214,201,255,0) 55%),
@@ -28,164 +26,152 @@
       radial-gradient(150% 120% at 50% 50%, rgba(255,224,229,0.70) 0%, rgba(255,255,255,0) 70%),
       linear-gradient(135deg, #ffe9ec 0%, #fef6df 35%, #f3eaff 70%, #ffe4ec 100%);
     background-size: 200% 200%;
-    animation: drift 26s ease-in-out infinite;
+    animation: drift 28s ease-in-out infinite;
   }
-
   @keyframes drift {
     0%, 100% { background-position: 0% 50%; }
     50%      { background-position: 100% 50%; }
   }
 
   .stage {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
     cursor: pointer;
   }
 
+  /* idle breathing + bob lives on the wrapper so it never fights the JS tilt */
+  .face-wrap { animation: breathe 6s ease-in-out infinite; will-change: transform; }
+  @keyframes breathe {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50%      { transform: translateY(-1.6%) scale(1.012); }
+  }
+
   .face {
-    width: min(46vmin, 360px);
-    height: min(46vmin, 360px);
+    width: min(48vmin, 380px);
+    height: min(48vmin, 380px);
     overflow: visible;
-    transition: transform 0.25s cubic-bezier(.34,1.56,.64,1);
-    transform-origin: center;
+    will-change: transform;
+    transition: transform 0.5s cubic-bezier(.22,1,.36,1);
   }
 
-  /* gentle idle bob */
-  .face-wrap {
-    animation: bob 5.5s ease-in-out infinite;
+  /* ---- eyes ---- */
+  .lid {
+    transition: transform 0.16s cubic-bezier(.45,0,.2,1);
+    will-change: transform;
   }
-  @keyframes bob {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50%      { transform: translateY(-2.2%) rotate(-0.6deg); }
-  }
+  .eye-iris  { transition: opacity 0.14s ease, transform 0.3s cubic-bezier(.34,1.56,.64,1); }
+  .eye-glint { transition: opacity 0.14s ease; }
+  .eye-arc, .eye-heart { opacity: 0; transition: opacity 0.16s ease; }
 
-  .eye, .pupil, .mouth-path, .tongue, .brow, .cheek {
-    transition: all 0.18s ease-out;
-  }
+  .content.happy .eye-iris,  .content.happy .eye-glint  { opacity: 0; }
+  .content.happy .eye-arc    { opacity: 1; }
+  .content.heart .eye-iris,  .content.heart .eye-glint  { opacity: 0; }
+  .content.heart .eye-heart  { opacity: 1; }
 
-  .pupil { transition: transform 0.08s linear; }
+  /* ---- mouth ---- */
+  .mouth-g { transition: transform 0.22s cubic-bezier(.34,1.56,.64,1); transform-box: fill-box; transform-origin: center; }
+  .mouth-g.pop { transform: scale(1.18); }
+
+  .tongue {
+    opacity: 0;
+    transition: transform 0.38s cubic-bezier(.34,1.7,.5,1), opacity 0.22s ease;
+    transform-box: fill-box; transform-origin: 100px 148px;
+  }
 
   .cheek { opacity: 0; transition: opacity 0.4s ease; }
   .face.blush .cheek { opacity: 1; }
 
-  /* hint text */
+  .brow { transition: transform 0.2s cubic-bezier(.34,1.56,.64,1), opacity 0.2s ease; opacity: 0; }
+
+  /* ---- UI chrome ---- */
+  .bubble {
+    position: fixed; top: 13%; left: 50%;
+    transform: translateX(-50%) translateY(10px) scale(0.92);
+    background: rgba(255,255,255,0.68);
+    backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px);
+    border-radius: 24px; padding: 12px 24px;
+    color: #5a4150; font-size: clamp(16px, 2.4vw, 24px); font-weight: 600;
+    box-shadow: 0 10px 34px rgba(180,140,160,0.28);
+    opacity: 0; pointer-events: none; max-width: 80vw; text-align: center;
+    transition: opacity 0.3s ease, transform 0.35s cubic-bezier(.34,1.56,.64,1);
+  }
+  .bubble.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+
+  .typer {
+    position: fixed; bottom: 64px; left: 50%; transform: translateX(-50%);
+    width: min(420px, 80vw); padding: 13px 22px;
+    border: none; border-radius: 30px;
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 6px 24px rgba(180,140,160,0.22);
+    font-size: 16px; color: #4a3340; text-align: center; outline: none;
+    transition: box-shadow 0.25s ease, background 0.25s ease;
+  }
+  .typer::placeholder { color: rgba(90,65,80,0.4); }
+  .typer:focus { background: rgba(255,255,255,0.8); box-shadow: 0 6px 30px rgba(180,140,160,0.4); }
+
   .hint {
-    position: fixed;
-    bottom: 26px;
-    left: 50%;
-    transform: translateX(-50%);
-    color: rgba(60,40,50,0.45);
-    font-size: 14px;
-    letter-spacing: 0.3px;
-    user-select: none;
-    pointer-events: none;
-    text-align: center;
+    position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%);
+    color: rgba(60,40,50,0.45); font-size: 14px; letter-spacing: 0.3px;
+    user-select: none; pointer-events: none; text-align: center;
     transition: opacity 0.6s ease;
   }
   .hint.hide { opacity: 0; }
 
-  /* speech bubble */
-  .bubble {
-    position: fixed;
-    top: 14%;
-    left: 50%;
-    transform: translateX(-50%) translateY(8px) scale(0.9);
-    background: rgba(255,255,255,0.7);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    border-radius: 22px;
-    padding: 12px 22px;
-    color: #5a4150;
-    font-size: clamp(16px, 2.4vw, 24px);
-    font-weight: 500;
-    box-shadow: 0 8px 30px rgba(180,140,160,0.25);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(.34,1.56,.64,1);
-    max-width: 80vw;
-    text-align: center;
-  }
-  .bubble.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
-  }
+  .sparkle { position: fixed; right: 22px; bottom: 18px; width: 26px; height: 26px; opacity: 0.55; pointer-events: none; }
 
-  /* hidden input that captures typing */
-  .typer {
-    position: fixed;
-    bottom: 64px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: min(420px, 80vw);
-    padding: 13px 20px;
-    border: none;
-    border-radius: 30px;
-    background: rgba(255,255,255,0.55);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    box-shadow: 0 6px 24px rgba(180,140,160,0.22);
-    font-size: 16px;
-    color: #4a3340;
-    text-align: center;
-    outline: none;
-    transition: box-shadow 0.25s ease, background 0.25s ease;
-  }
-  .typer::placeholder { color: rgba(90,65,80,0.4); }
-  .typer:focus {
-    background: rgba(255,255,255,0.78);
-    box-shadow: 0 6px 30px rgba(180,140,160,0.4);
-  }
-
-  .sparkle {
-    position: fixed;
-    right: 22px;
-    bottom: 18px;
-    width: 26px;
-    height: 26px;
-    opacity: 0.55;
-    pointer-events: none;
+  @media (prefers-reduced-motion: reduce) {
+    .face-wrap, body { animation: none; }
   }
 </style>
 </head>
 <body>
   <div class="stage" id="stage">
     <div class="face-wrap">
-      <svg class="face" id="face" viewBox="0 0 200 200" aria-label="A smiling face">
-        <!-- cheeks (blush) -->
-        <ellipse class="cheek" cx="62"  cy="118" rx="16" ry="11" fill="#ff9db0" />
-        <ellipse class="cheek" cx="138" cy="118" rx="16" ry="11" fill="#ff9db0" />
+      <svg class="face" id="face" viewBox="0 0 200 200" aria-label="A cute anime smiley face">
+        <!-- cheeks -->
+        <ellipse class="cheek" cx="48"  cy="120" rx="14" ry="9" fill="#ff9db0" />
+        <ellipse class="cheek" cx="152" cy="120" rx="14" ry="9" fill="#ff9db0" />
 
-        <!-- eyebrows (hidden by default, used for expressions) -->
-        <path class="brow" id="browL" d="M58 70 Q72 66 84 70" stroke="var(--ink)" stroke-width="0" stroke-linecap="round" fill="none" />
-        <path class="brow" id="browR" d="M116 70 Q128 66 142 70" stroke="var(--ink)" stroke-width="0" stroke-linecap="round" fill="none" />
+        <!-- brows (subtle, only shown for some expressions) -->
+        <path class="brow" id="browL" d="M50 56 Q66 52 82 58"  stroke="var(--ink)" stroke-width="5" stroke-linecap="round" fill="none" />
+        <path class="brow" id="browR" d="M118 58 Q134 52 150 56" stroke="var(--ink)" stroke-width="5" stroke-linecap="round" fill="none" />
 
-        <!-- eyes -->
-        <g id="eyeL">
-          <circle class="eye" id="eyeWhiteL" cx="72" cy="84" r="15" fill="var(--ink)" />
-          <circle class="pupil" id="pupilL" cx="72" cy="84" r="6" fill="#fff" opacity="0" />
+        <!-- LEFT EYE -->
+        <g class="lid" id="lidL">
+          <g class="content" id="contentL">
+            <ellipse class="eye-iris" cx="66" cy="92" rx="16" ry="23" fill="var(--ink)" />
+            <circle  class="eye-glint" cx="60" cy="82" r="5"   fill="#fff" />
+            <circle  class="eye-glint" cx="70" cy="96" r="2.4" fill="#fff" />
+            <path class="eye-arc" d="M50 96 Q66 74 82 96" stroke="var(--ink)" stroke-width="7" stroke-linecap="round" fill="none" />
+            <path class="eye-heart" d="M66 110 C46 92 50 74 66 82 C82 74 86 92 66 110 Z" fill="var(--ink)" />
+          </g>
         </g>
-        <g id="eyeR">
-          <circle class="eye" id="eyeWhiteR" cx="128" cy="84" r="15" fill="var(--ink)" />
-          <circle class="pupil" id="pupilR" cx="128" cy="84" r="6" fill="#fff" opacity="0" />
+
+        <!-- RIGHT EYE -->
+        <g class="lid" id="lidR">
+          <g class="content" id="contentR">
+            <ellipse class="eye-iris" cx="134" cy="92" rx="16" ry="23" fill="var(--ink)" />
+            <circle  class="eye-glint" cx="128" cy="82" r="5"   fill="#fff" />
+            <circle  class="eye-glint" cx="138" cy="96" r="2.4" fill="#fff" />
+            <path class="eye-arc" d="M118 96 Q134 74 150 96" stroke="var(--ink)" stroke-width="7" stroke-linecap="round" fill="none" />
+            <path class="eye-heart" d="M134 110 C114 92 118 74 134 82 C150 74 154 92 134 110 Z" fill="var(--ink)" />
+          </g>
         </g>
 
-        <!-- mouth -->
-        <path class="mouth-path" id="mouth" d="M64 124 Q100 156 136 124"
-              stroke="var(--ink)" stroke-width="7" stroke-linecap="round" fill="none" />
+        <!-- MOUTH -->
+        <g class="mouth-g" id="mouthG">
+          <path id="mouth" d="M88 148 Q100 158 112 148" stroke="var(--ink)" stroke-width="6" stroke-linecap="round" fill="none" />
+        </g>
 
-        <!-- tongue -->
-        <path class="tongue" id="tongue" d="M86 138 Q100 138 114 138 Q114 162 100 162 Q86 162 86 138 Z"
-              fill="#ff7a93" opacity="0" />
+        <!-- TONGUE -->
+        <path class="tongue" id="tongue" d="M93 149 Q100 149 107 149 Q107 163 100 163 Q93 163 93 149 Z" fill="#ff7a93" />
       </svg>
     </div>
   </div>
 
   <div class="bubble" id="bubble"></div>
-  <input class="typer" id="typer" type="text" autocomplete="off" spellcheck="false"
-         placeholder="say something to me…" />
+  <input class="typer" id="typer" type="text" autocomplete="off" spellcheck="false" placeholder="say something to me…" />
   <div class="hint" id="hint">move your mouse · click me · type to me</div>
 
   <svg class="sparkle" viewBox="0 0 24 24" fill="none">
@@ -194,209 +180,203 @@
 
 <script>
 (() => {
-  const face   = document.getElementById('face');
-  const pupilL = document.getElementById('pupilL');
-  const pupilR = document.getElementById('pupilR');
-  const eyeWL  = document.getElementById('eyeWhiteL');
-  const eyeWR  = document.getElementById('eyeWhiteR');
-  const eyeLG  = document.getElementById('eyeL');
-  const eyeRG  = document.getElementById('eyeR');
-  const browL  = document.getElementById('browL');
-  const browR  = document.getElementById('browR');
-  const mouth  = document.getElementById('mouth');
-  const tongue = document.getElementById('tongue');
-  const bubble = document.getElementById('bubble');
-  const typer  = document.getElementById('typer');
-  const hint   = document.getElementById('hint');
-  const stage  = document.getElementById('stage');
+  const $ = id => document.getElementById(id);
+  const face = $('face');
+  const lidL = $('lidL'), lidR = $('lidR');
+  const contentL = $('contentL'), contentR = $('contentR');
+  const browL = $('browL'), browR = $('browR');
+  const mouthG = $('mouthG'), mouth = $('mouth'), tongue = $('tongue');
+  const bubble = $('bubble'), typer = $('typer'), hint = $('hint'), stage = $('stage');
 
-  // eye geometry (matches SVG)
-  const EYES = [
-    { white: eyeWL, pupil: pupilL, cx: 72,  cy: 84 },
-    { white: eyeWR, pupil: pupilR, cx: 128, cy: 84 },
-  ];
+  // eye centres in SVG units (for transform-origin)
+  lidL.style.transformOrigin = '66px 92px';
+  lidR.style.transformOrigin = '134px 92px';
 
   const MOUTHS = {
-    smile:   'M64 124 Q100 156 136 124',
-    grin:    'M60 120 Q100 168 140 120',
-    o:       'M86 130 Q100 116 114 130 Q114 152 100 152 Q86 152 86 130',
-    flat:    'M70 138 Q100 138 130 138',
-    frown:   'M64 150 Q100 124 136 150',
-    wobble:  'M66 132 Q83 120 100 132 Q117 144 134 132',
-    cat:     'M70 130 Q85 146 100 130 Q115 146 130 130',
+    smile:  { d: 'M88 148 Q100 158 112 148', fill: 'none' },
+    grin:   { d: 'M86 146 Q100 165 114 146 Z', fill: 'var(--ink)' },
+    o:      { d: 'M92 148 Q92 139 100 139 Q108 139 108 148 Q108 158 100 158 Q92 158 92 148 Z', fill: 'var(--ink)' },
+    cat:    { d: 'M88 147 Q94 153 100 147 Q106 153 112 147', fill: 'none' },
+    frown:  { d: 'M88 156 Q100 147 112 156', fill: 'none' },
+    flat:   { d: 'M89 151 L111 151', fill: 'none' },
+    smallo: { d: 'M95 149 Q95 143 100 143 Q105 143 105 149 Q105 155 100 155 Q95 155 100 155 Z', fill: 'var(--ink)' },
   };
 
-  let busy = false;          // an expression animation is playing
-  let mouseX = 0.5, mouseY = 0.5;
-  let hasMoved = false;
-
-  /* ---------- eye tracking ---------- */
-  function trackEyes() {
-    if (busy) { requestAnimationFrame(trackEyes); return; }
-    const rect = face.getBoundingClientRect();
-    // normalized direction from face center to pointer
-    const fx = rect.left + rect.width / 2;
-    const fy = rect.top + rect.height / 2;
-    const px = mouseX * window.innerWidth;
-    const py = mouseY * window.innerHeight;
-    let dx = (px - fx) / (window.innerWidth / 2);
-    let dy = (py - fy) / (window.innerHeight / 2);
-    dx = Math.max(-1, Math.min(1, dx));
-    dy = Math.max(-1, Math.min(1, dy));
-
-    const max = 5.5; // px of travel inside the eye (SVG units)
-    EYES.forEach(e => {
-      e.pupil.setAttribute('cx', e.cx + dx * max);
-      e.pupil.setAttribute('cy', e.cy + dy * max);
-      e.white.setAttribute('cx', e.cx + dx * 1.5);
-      e.white.setAttribute('cy', e.cy + dy * 1.5);
-    });
-
-    // tiny head tilt toward the cursor
-    face.style.transform = `rotate(${dx * 4}deg) translate(${dx*4}px, ${dy*3}px)`;
-    requestAnimationFrame(trackEyes);
-  }
-
-  window.addEventListener('pointermove', (e) => {
-    mouseX = e.clientX / window.innerWidth;
-    mouseY = e.clientY / window.innerHeight;
-    if (!hasMoved) { hasMoved = true; }
-  });
-  requestAnimationFrame(trackEyes);
-
-  /* ---------- low level helpers ---------- */
   const wait = ms => new Promise(r => setTimeout(r, ms));
+  let busy = false;
 
-  function setMouth(name) { mouth.setAttribute('d', MOUTHS[name] || MOUTHS.smile); }
+  /* ---------- gaze / eye tracking with smoothing + saccades ---------- */
+  let mx = 0.5, my = 0.5;                 // pointer (normalised)
+  let gx = 0, gy = 0;                     // current smoothed gaze offset
+  let sacX = 0, sacY = 0;                 // micro-saccade additive offset
+  const MAXX = 7, MAXY = 6;               // px travel inside eye (svg units)
 
-  function showPupils(on) {
-    const o = on ? 1 : 0;
-    pupilL.style.opacity = o;
-    pupilR.style.opacity = o;
+  window.addEventListener('pointermove', e => {
+    mx = e.clientX / window.innerWidth;
+    my = e.clientY / window.innerHeight;
+  });
+
+  function frame() {
+    if (!busy) {
+      const r = face.getBoundingClientRect();
+      const fx = r.left + r.width / 2, fy = r.top + r.height / 2;
+      let dx = (mx * innerWidth  - fx) / (innerWidth  / 2);
+      let dy = (my * innerHeight - fy) / (innerHeight / 2);
+      dx = Math.max(-1, Math.min(1, dx));
+      dy = Math.max(-1, Math.min(1, dy));
+
+      const tx = dx * MAXX + sacX;
+      const ty = dy * MAXY + sacY;
+      // critically-damped-ish smoothing
+      gx += (tx - gx) * 0.16;
+      gy += (ty - gy) * 0.16;
+
+      contentL.style.transform = `translate(${gx}px, ${gy}px)`;
+      contentR.style.transform = `translate(${gx}px, ${gy}px)`;
+      face.style.transform = `rotate(${dx * 3.2}deg) translate(${dx * 4}px, ${dy * 3}px)`;
+
+      // ease saccade back toward 0
+      sacX += (0 - sacX) * 0.08;
+      sacY += (0 - sacY) * 0.08;
+    }
+    requestAnimationFrame(frame);
   }
+  requestAnimationFrame(frame);
 
+  /* ---------- primitives ---------- */
+  function lid(el, sx, sy) { el.style.transform = (sx === 1 && sy === 1) ? '' : `scale(${sx}, ${sy})`; }
+  function eyesClass(name, on) { contentL.classList.toggle(name, on); contentR.classList.toggle(name, on); }
   function blush(on) { face.classList.toggle('blush', on); }
 
-  // squash an eye closed by scaling its group vertically
-  function closeEye(group, cy, closed) {
-    if (closed) {
-      group.style.transform = `translateY(${cy}px) scaleY(0.1) translateY(${-cy}px)`;
-      group.style.transformBox = 'fill-box';
-    } else {
-      group.style.transform = '';
-    }
-  }
-  // use transform-origin via CSS for the groups
-  eyeLG.style.transformOrigin = '72px 84px';
-  eyeRG.style.transformOrigin = '128px 84px';
-  function setEye(group, closed) {
-    group.style.transform = closed ? 'scaleY(0.08)' : '';
+  function setMouth(name) {
+    const m = MOUTHS[name] || MOUTHS.smile;
+    mouth.setAttribute('d', m.d);
+    mouth.setAttribute('fill', m.fill);
+    mouth.setAttribute('stroke', m.fill === 'none' ? 'var(--ink)' : 'none');
+    // little pop for life
+    mouthG.classList.add('pop');
+    setTimeout(() => mouthG.classList.remove('pop'), 130);
   }
 
-  /* ---------- expressions ---------- */
-  async function blink() {
+  function showBrows(on) { browL.style.opacity = on ? 1 : 0; browR.style.opacity = on ? 1 : 0; }
+
+  /* ---------- expressions (all easing-driven & sequenced) ---------- */
+  async function blink(double = false) {
     if (busy) return;
-    setEye(eyeLG, true); setEye(eyeRG, true);
-    await wait(110);
-    setEye(eyeLG, false); setEye(eyeRG, false);
+    lid(lidL, 1.06, 0.06); lid(lidR, 1.06, 0.06);   // slight stretch as it closes
+    await wait(90);
+    lid(lidL, 1, 1); lid(lidR, 1, 1);
+    if (double) { await wait(120); return blink(false); }
   }
 
   async function wink() {
     if (busy) return; busy = true;
-    setEye(eyeRG, true);
     setMouth('grin');
-    await wait(450);
-    setEye(eyeRG, false);
+    lid(lidR, 1.06, 0.06);
+    await wait(70); lid(lidR, 1.05, 0.05);          // hold closed
+    await wait(420);
+    lid(lidR, 1, 1);
     setMouth('smile');
     busy = false;
   }
 
   async function tongueOut() {
     if (busy) return; busy = true;
+    // anticipation: tiny squint
+    lid(lidL, 1.02, 0.85); lid(lidR, 1.02, 0.85);
+    await wait(120);
     setMouth('o');
-    setEye(eyeLG, true); setEye(eyeRG, true);
+    lid(lidL, 1.05, 0.05); lid(lidR, 1.05, 0.05);   // happy closed eyes
     tongue.style.opacity = 1;
-    tongue.style.transform = 'translateY(0)';
-    await wait(700);
-    tongue.style.transform = 'translateY(8px)';
+    tongue.style.transform = 'translateY(7px) scaleY(1.05)';   // overshoot drop
+    await wait(380);
+    tongue.style.transform = 'translateY(4px) scaleY(1)';
+    await wait(360);
+    tongue.style.transform = 'translateY(0) scaleY(0.6)';
     tongue.style.opacity = 0;
-    setEye(eyeLG, false); setEye(eyeRG, false);
+    lid(lidL, 1, 1); lid(lidR, 1, 1);
     setMouth('smile');
     busy = false;
   }
 
   async function surprised() {
     if (busy) return; busy = true;
-    showPupils(true);
-    EYES.forEach(e => e.white.setAttribute('r', 18));
+    showBrows(true);
+    browL.style.transform = 'translateY(-5px)';
+    browR.style.transform = 'translateY(-5px)';
+    lid(lidL, 1.16, 1.16); lid(lidR, 1.16, 1.16);   // eyes pop wide
     setMouth('o');
-    browL.setAttribute('stroke-width', 5);
-    browR.setAttribute('stroke-width', 5);
-    await wait(800);
-    EYES.forEach(e => e.white.setAttribute('r', 15));
-    showPupils(false);
-    browL.setAttribute('stroke-width', 0);
-    browR.setAttribute('stroke-width', 0);
+    await wait(750);
+    lid(lidL, 1, 1); lid(lidR, 1, 1);
+    browL.style.transform = ''; browR.style.transform = '';
+    showBrows(false);
     setMouth('smile');
     busy = false;
   }
 
   async function dizzy() {
     if (busy) return; busy = true;
-    setMouth('wobble');
+    setMouth('flat');
+    eyesClass('happy', true);                        // swap to dazed arcs
     for (let i = 0; i < 3; i++) {
-      face.style.transform = 'rotate(8deg)';  await wait(120);
-      face.style.transform = 'rotate(-8deg)'; await wait(120);
+      face.style.transform = 'rotate(9deg)';  await wait(130);
+      face.style.transform = 'rotate(-9deg)'; await wait(130);
     }
     face.style.transform = '';
+    eyesClass('happy', false);
     setMouth('smile');
-    busy = false;
-  }
-
-  async function love() {
-    if (busy) return; busy = true;
-    blush(true);
-    // heart-ish eyes: just shrink + smile big
-    setMouth('grin');
-    EYES.forEach(e => e.white.setAttribute('r', 11));
-    await wait(900);
-    EYES.forEach(e => e.white.setAttribute('r', 15));
-    setMouth('smile');
-    await wait(400);
-    blush(false);
     busy = false;
   }
 
   async function laugh() {
     if (busy) return; busy = true;
     blush(true);
+    eyesClass('happy', true);                        // ^_^ arcs
+    setMouth('grin');
     for (let i = 0; i < 4; i++) {
-      setEye(eyeLG, true); setEye(eyeRG, true);
-      setMouth('grin');
-      face.style.transform = 'translateY(-4px)';
-      await wait(150);
-      face.style.transform = 'translateY(0)';
-      setMouth('cat');
-      await wait(150);
+      face.style.transform = 'translateY(-5px) rotate(1.5deg)';  await wait(140);
+      face.style.transform = 'translateY(1px) rotate(-1.5deg)';  await wait(140);
     }
-    setEye(eyeLG, false); setEye(eyeRG, false);
+    face.style.transform = '';
+    eyesClass('happy', false);
     setMouth('smile');
+    blush(false);
+    busy = false;
+  }
+
+  async function love() {
+    if (busy) return; busy = true;
+    blush(true);
+    eyesClass('heart', true);                        // black heart eyes
+    setMouth('grin');
+    // gentle heartbeat pulse on the eyes
+    for (let i = 0; i < 2; i++) {
+      lid(lidL, 1.12, 1.12); lid(lidR, 1.12, 1.12); await wait(180);
+      lid(lidL, 1, 1);       lid(lidR, 1, 1);        await wait(220);
+    }
+    await wait(300);
+    eyesClass('heart', false);
+    setMouth('smile');
+    await wait(200);
     blush(false);
     busy = false;
   }
 
   async function sad() {
     if (busy) return; busy = true;
+    showBrows(true);
+    browL.setAttribute('d', 'M50 62 Q66 54 82 64');   // worried slope
+    browR.setAttribute('d', 'M118 64 Q134 54 150 62');
+    browL.style.transform = 'translateY(2px) rotate(8deg)';
+    browR.style.transform = 'translateY(2px) rotate(-8deg)';
+    lid(lidL, 1, 0.78); lid(lidR, 1, 0.78);          // droopy eyes
     setMouth('frown');
-    browL.setAttribute('d', 'M58 64 Q72 72 84 76');
-    browR.setAttribute('d', 'M116 76 Q128 72 142 64');
-    browL.setAttribute('stroke-width', 4);
-    browR.setAttribute('stroke-width', 4);
-    await wait(1100);
-    browL.setAttribute('stroke-width', 0);
-    browR.setAttribute('stroke-width', 0);
-    browL.setAttribute('d', 'M58 70 Q72 66 84 70');
-    browR.setAttribute('d', 'M116 70 Q128 66 142 70');
+    await wait(1200);
+    lid(lidL, 1, 1); lid(lidR, 1, 1);
+    browL.setAttribute('d', 'M50 56 Q66 52 82 58');
+    browR.setAttribute('d', 'M118 58 Q134 52 150 56');
+    browL.style.transform = ''; browR.style.transform = '';
+    showBrows(false);
     setMouth('smile');
     busy = false;
   }
@@ -410,104 +390,88 @@
     bubbleTimer = setTimeout(() => bubble.classList.remove('show'), ms);
   }
 
-  /* ---------- idle behaviour ---------- */
+  /* ---------- idle life ---------- */
   function scheduleBlink() {
-    const t = 1800 + Math.random() * 3500;
-    setTimeout(() => { blink(); scheduleBlink(); }, t);
+    setTimeout(() => {
+      blink(Math.random() < 0.25);
+      scheduleBlink();
+    }, 2200 + Math.random() * 3600);
   }
   scheduleBlink();
 
-  // occasional spontaneous silliness
+  // micro-saccades: eyes occasionally dart a little on their own
+  function scheduleSaccade() {
+    setTimeout(() => {
+      if (!busy) { sacX = (Math.random() - 0.5) * 9; sacY = (Math.random() - 0.5) * 7; }
+      scheduleSaccade();
+    }, 1400 + Math.random() * 2600);
+  }
+  scheduleSaccade();
+
   function scheduleSilly() {
-    const t = 7000 + Math.random() * 9000;
     setTimeout(() => {
       if (!busy && document.activeElement !== typer) {
-        const acts = [wink, tongueOut, dizzy, () => { say('hi! :)'); }];
+        const acts = [wink, tongueOut, dizzy, () => { say('hi! :)'); blink(); }];
         acts[Math.floor(Math.random() * acts.length)]();
       }
       scheduleSilly();
-    }, t);
+    }, 8000 + Math.random() * 9000);
   }
   scheduleSilly();
 
-  /* ---------- interactions ---------- */
-  const clickActs = [wink, tongueOut, surprised, dizzy, laugh, love];
+  /* ---------- click cycles expressions ---------- */
+  const clickActs = [wink, tongueOut, surprised, laugh, love, dizzy];
   let clickIdx = 0;
-  stage.addEventListener('click', (e) => {
-    if (e.target === typer) return;
-    if (busy) return;
-    const fn = clickActs[clickIdx % clickActs.length];
-    clickIdx++;
-    fn();
+  stage.addEventListener('click', e => {
+    if (e.target === typer || busy) return;
+    clickActs[clickIdx++ % clickActs.length]();
   });
 
-  hint.addEventListener('animationstart', () => {});
-
   /* ---------- typing reactions ---------- */
-  // keyword -> reaction
+  const pick = a => a[Math.floor(Math.random() * a.length)];
   const RULES = [
-    { kw: ['love','heart','<3','❤','adore','cute','marry'],          fn: love,      say: ['aww ♥', 'me too ♥', '*blush*'] },
-    { kw: ['lol','haha','lmao','funny','joke','rofl','😂','hehe'],    fn: laugh,     say: ['hahaha!', 'heehee', 'good one!'] },
-    { kw: ['hi','hello','hey','yo','sup','howdy'],                    fn: wink,      say: ['hello!', 'hey you :)', 'hiii'] },
-    { kw: ['sad','cry','sorry','bad','hurt','😢','upset','lonely'],   fn: sad,       say: ['aw, there there', 'hug?', "it'll be ok"] },
-    { kw: ['wow','omg','what','really','whoa','no way','?!'],         fn: surprised, say: ['whoa!', 'really?!', 'no way!'] },
-    { kw: ['tongue','silly','bleh','nyah','blep','weird'],            fn: tongueOut, say: ['blehh!', ':P', 'nyaa'] },
-    { kw: ['dizzy','spin','confused','huh','what?'],                  fn: dizzy,     say: ['woop woop', 'wheee', '@_@'] },
-    { kw: ['bye','goodbye','cya','later','gtg'],                      fn: wink,      say: ['byeee', 'see ya!', 'come back soon'] },
-    { kw: ['name','who are you','what are you'],                      fn: wink,      say: ["i'm Smiley!", 'just a happy face :)'] },
-    { kw: ['good','great','nice','cool','awesome','yay','happy'],     fn: laugh,     say: ['yay!', ':D', 'woohoo'] },
+    { kw: ['love','heart','<3','❤','adore','cute','marry','💕'], fn: love,      say: ['aww ♥','me too ♥','*blush*'] },
+    { kw: ['lol','haha','lmao','funny','joke','rofl','😂','hehe'], fn: laugh,    say: ['hahaha!','heehee','good one!'] },
+    { kw: ['hi','hello','hey','yo','sup','howdy','hiya'],        fn: wink,      say: ['hello!','hey you :)','hiii'] },
+    { kw: ['sad','cry','sorry','bad','hurt','😢','upset','lonely'],fn: sad,      say: ['aw, there there','hug?','it’ll be ok'] },
+    { kw: ['wow','omg','what','really','whoa','no way','?!'],    fn: surprised, say: ['whoa!','really?!','no way!'] },
+    { kw: ['tongue','silly','bleh','nyah','blep','weird','pfft'],fn: tongueOut, say: ['blehh!',':P','nyaa'] },
+    { kw: ['dizzy','spin','confused','huh','what?','??'],        fn: dizzy,     say: ['woop woop','wheee','@_@'] },
+    { kw: ['bye','goodbye','cya','later','gtg','night'],         fn: wink,      say: ['byeee','see ya!','come back soon'] },
+    { kw: ['name','who are you','what are you'],                 fn: wink,      say: ["i'm Smiley!",'just a happy face :)'] },
+    { kw: ['good','great','nice','cool','awesome','yay','happy'],fn: laugh,     say: ['yay!',':D','woohoo'] },
   ];
-
-  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
   function react(text) {
     const t = text.toLowerCase().trim();
     if (!t) return;
     for (const r of RULES) {
-      if (r.kw.some(k => t.includes(k))) {
-        say(pick(r.say));
-        r.fn();
-        return;
-      }
+      if (r.kw.some(k => t.includes(k))) { say(pick(r.say)); r.fn(); return; }
     }
-    // default: acknowledge with a little wink/blink + echo vibe
-    const fallbacks = [
+    pick([
       () => { say('ooh, tell me more'); wink(); },
-      () => { say('mhm mhm'); blink(); },
+      () => { say('mhm mhm'); blink(true); },
       () => { say('hehe'); tongueOut(); },
       () => { say(':)'); wink(); },
-    ];
-    pick(fallbacks)();
+    ])();
   }
 
-  // react live as they type the silliest single chars too
   typer.addEventListener('input', () => {
-    const v = typer.value;
-    const last = v.slice(-1);
-    if (last === '?') { if(!busy) surprised(); }
-    else if (last === '!') { if(!busy) blink(); }
-    else if (/[a-z0-9]/i.test(last) && !busy && Math.random() < 0.25) {
-      // tiny acknowledging blink while typing
-      blink();
-    }
+    const last = typer.value.slice(-1);
+    if (last === '?' && !busy) surprised();
+    else if (/[a-z0-9]/i.test(last) && !busy && Math.random() < 0.18) blink();
   });
-
-  typer.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      react(typer.value);
-      typer.value = '';
-    }
+  typer.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { react(typer.value); typer.value = ''; }
   });
+  typer.addEventListener('focus', () => hint.classList.add('hide'));
 
-  typer.addEventListener('focus', () => { hint.classList.add('hide'); });
-
-  // hide hint after first interaction
   let hinted = false;
-  function dropHint(){ if(!hinted){ hinted = true; setTimeout(()=>hint.classList.add('hide'), 2500);} }
+  const dropHint = () => { if (!hinted) { hinted = true; setTimeout(() => hint.classList.add('hide'), 2500); } };
   window.addEventListener('pointermove', dropHint, { once: true });
   window.addEventListener('keydown', dropHint, { once: true });
 
-  // wave hello on load
+  // hello on load
   setTimeout(() => { say('hi there! :)'); wink(); }, 700);
 })();
 </script>
